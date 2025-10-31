@@ -5,7 +5,6 @@ from firebase_admin import credentials, firestore
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 
-# --- Initialization ---
 app = Flask(__name__)
 CORS(app)
 
@@ -99,4 +98,5 @@ def book_appointment():
 
 # --- Run the App ---
 if __name__ == '__main__':
+
     app.run(debug=True, port=5000)
