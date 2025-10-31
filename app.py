@@ -12,7 +12,7 @@ try:
     cred = credentials.Certificate("serviceAccountKey.json")
     firebase_admin.initialize_app(cred)  
     db = firestore.client()
-    print("✅ Firebase connection successful.")
+    print("✅ Firebase connection successful.") 
 except Exception as e:
     print(f"🔥 Firebase connection failed: {e}")
     db = None
@@ -100,5 +100,6 @@ def book_appointment():
 if __name__ == '__main__':
 
     app.run(debug=True, port=5000)
+
 
 
