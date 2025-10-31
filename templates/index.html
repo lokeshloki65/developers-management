@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Developer Appointment System</title>
+    <style>
+        :root { --primary-color: #007bff; --primary-hover: #0056b3; --danger-color: #dc3545; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; margin: 0; }
+        .hidden { display: none !important; }
+        a { text-decoration: none; color: var(--primary-color); }
+        button { cursor: pointer; border: none; border-radius: 5px; padding: 10px 15px; font-size: 1em; }
+        
+        /* --- Views --- */
+        .view { min-height: 100vh; }
+        
+        /* --- Auth View --- */
+        #auth-section { display: flex; justify-content: center; align-items: center; }
+        .auth-box { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        .auth-box h1 { margin-bottom: 24px; color: #333; }
+        .auth-box input { width: calc(100% - 24px); padding: 12px; margin-bottom: 16px; border: 1px solid #ddd; border-radius: 5px; }
+        .auth-box button { width: 100%; background-color: var(--primary-color); color: white; }
+        
+        /* --- App Header --- */
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 40px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header .logo { font-size: 1.5em; font-weight: bold; color: var(--primary-color); }
+        #logout-btn { background: var(--danger-color); color: white; }
+        
+        /* --- Developer List View --- */
+        .container { max-width: 1100px; margin: 40px auto; padding: 20px; }
+        .developers-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; }
+        .dev-card { background: #fff; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center; padding: 30px 20px; transition: all 0.3s ease; }
+        .dev-card:hover { transform: translateY(-8px); box-shadow: 0 10px 25px rgba(0,0,0,0.12); }
+        .dev-card img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid var(--primary-color); }
+        .dev-card h3 { margin: 15px 0 5px; }
+        .dev-card .specialty { color: #666; margin-bottom: 20px; }
+        .dev-card .view-profile-btn { background-color: var(--primary-color); color: white; }
+        
+        /* --- Developer Profile View --- */
+        .profile-header { display: flex; align-items: center; gap: 30px; margin-bottom: 30px; }
+        .profile-header img { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; }
+        .profile-bio, .profile-experience { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); margin-bottom: 20px; }
+        .profile-actions { display: flex; gap: 15px; margin-top: 20px; }
+        .back-btn { background-color: #6c757d; color: white; }
+        #edit-bio-input { width: 95%; min-height: 100px; margin-top: 10px; }
+
+        /* --- Booking Modal --- */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 500px; }
+        .modal-content h2 { margin-top: 0; }
+        .modal-content .form-group { margin-bottom: 15px; }
+        .modal-content label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .modal-content input, .modal-content textarea { width: calc(100% - 24px); padding: 12px; border: 1px solid #ddd; border-radius: 5px; }
+        .modal-actions { margin-top: 20px; text-align: right; }
+    </style>
+</head>
+<body>
+
+    <div id="auth-section" class="view">
+        <div class="auth-container">
+            <div id="login-view" class="auth-box">
+                <h1>Login</h1>
+                <input type="email" id="login-email" placeholder="Email Address">
+                <input type="password" id="login-password" placeholder="Password">
+                <button id="login-btn">Login</button>
+                <p>No account? <a href="#" id="show-register">Register now</a></p>
+            </div>
+            <div id="register-view" class="auth-box hidden">
+                <h1>Create Account</h1>
+                <input type="email" id="register-email" placeholder="Email Address">
+                <input type="password" id="register-password" placeholder="Password">
+                <button id="register-btn">Register</button>
+                <p>Have an account? <a href="#" id="show-login">Login here</a></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="developer-list-section" class="view hidden">
+        <div class="header">
+            <div class="logo">DevAppoint</div>
+            <div class="user-info">
+                <span id="user-email-header"></span>
+                <button id="logout-btn">Logout</button>
+            </div>
+        </div>
+        <div class="container">
+            <h1 style="margin-bottom: 40px;">Our Developers</h1>
+            <div id="developers-container" class="developers-grid"></div>
+        </div>
+    </div>
+
+    <div id="developer-profile-section" class="view hidden">
+        <div class="header">
+            <div class="logo">DevAppoint</div>
+            <div class="user-info">
+                <span id="user-email-profile"></span>
+            </div>
+        </div>
+        <div class="container" id="profile-container">
+            </div>
+    </div>
+    
+    <div id="booking-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2 id="booking-modal-title">Book Appointment</h2>
+            <div class="form-group">
+                <label for="book-name">Your Name</label>
+                <input type="text" id="book-name">
+            </div>
+            <div class="form-group">
+                <label for="book-phone">Phone Number</label>
+                <input type="tel" id="book-phone">
+            </div>
+            <div class="form-group">
+                <label for="book-purpose">Purpose of Appointment</label>
+                <textarea id="book-purpose" rows="4"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button id="cancel-booking-btn" class="back-btn">Cancel</button>
+                <button id="confirm-booking-btn" style="background: var(--primary-color); color: white;">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+    <script>
+        const firebaseConfig = { /* உங்கள் Firebase Config விவரங்களை இங்கே இடவும் */ };
+        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // --- View Management ---
+        const views = document.querySelectorAll('.view');
+        const showView = (viewId) => {
+            views.forEach(view => view.classList.add('hidden'));
+            document.getElementById(viewId).classList.remove('hidden');
+        };
+
+        // --- Auth & Routing ---
+        document.getElementById('show-register').addEventListener('click', (e) => { e.preventDefault(); document.getElementById('login-view').classList.add('hidden'); document.getElementById('register-view').classList.remove('hidden'); });
+        document.getElementById('show-login').addEventListener('click', (e) => { e.preventDefault(); document.getElementById('register-view').classList.add('hidden'); document.getElementById('login-view').classList.remove('hidden'); });
+        
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('user-email-header').textContent = user.email;
+                document.getElementById('user-email-profile').textContent = user.email;
+                showView('developer-list-section');
+                loadDeveloperList();
+            } else {
+                showView('auth-section');
+            }
+        });
+        document.getElementById('register-btn').addEventListener('click', () => { const e = document.getElementById('register-email').value, p = document.getElementById('register-password').value; auth.createUserWithEmailAndPassword(e, p).then(() => { alert('Registered! Please login.'); document.getElementById('show-login').click(); }).catch(err => alert(err.message)); });
+        document.getElementById('login-btn').addEventListener('click', () => { const e = document.getElementById('login-email').value, p = document.getElementById('login-password').value; auth.signInWithEmailAndPassword(e, p).catch(err => alert(err.message)); });
+        document.getElementById('logout-btn').addEventListener('click', () => auth.signOut());
+
+        // --- Developer List Logic ---
+        async function loadDeveloperList() {
+            const container = document.getElementById('developers-container');
+            container.innerHTML = "<h2>Loading Developers...</h2>";
+            try {
+                const res = await fetch('http://127.0.0.1:5000/developers');
+                const developers = await res.json();
+                container.innerHTML = '';
+                developers.forEach(dev => {
+                    const card = document.createElement('div');
+                    card.className = 'dev-card';
+                    card.innerHTML = `
+                        <img src="${dev.photoURL}" alt="${dev.name}">
+                        <h3>${dev.name}</h3>
+                        <p class="specialty">${dev.specialty}</p>
+                        <button class="view-profile-btn" data-id="${dev.id}">View Profile</button>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (error) { container.innerHTML = "<h2>Error loading developers.</h2>"; }
+        }
+        
+        // --- Event Delegation for View Profile ---
+        document.body.addEventListener('click', event => {
+            if (event.target.classList.contains('view-profile-btn')) {
+                const devId = event.target.dataset.id;
+                loadDeveloperProfile(devId);
+            }
+        });
+
+        // --- Developer Profile Logic ---
+        async function loadDeveloperProfile(devId) {
+            const container = document.getElementById('profile-container');
+            container.innerHTML = "<h2>Loading Profile...</h2>";
+            showView('developer-profile-section');
+            const doc = await db.collection('developers').doc(devId).get();
+            if (!doc.exists) { container.innerHTML = "<h2>Profile not found.</h2>"; return; }
+            
+            const dev = doc.data();
+            container.innerHTML = `
+                <div class="profile-header">
+                    <img src="${dev.photoURL}" alt="${dev.name}">
+                    <div>
+                        <h1>${dev.name}</h1>
+                        <p>${dev.specialty}</p>
+                    </div>
+                </div>
+                <div class="profile-bio">
+                    <h3>About Me</h3>
+                    <p id="bio-text">${dev.bio}</p>
+                    <textarea id="edit-bio-input" class="hidden">${dev.bio}</textarea>
+                </div>
+                <div class="profile-experience">
+                    <h3>Experience</h3>
+                    <a href="${dev.portfolioURL}" target="_blank">⭐ Visit Portfolio (${dev.experienceTitle || 'Click here'})</a>
+                </div>
+                <div class="profile-actions">
+                    <button class="back-btn" onclick="showView('developer-list-section')">Back to Home</button>
+                    <button id="book-now-btn" data-id="${devId}" data-name="${dev.name}" class="view-profile-btn">Book Appointment</button>
+                    <button id="edit-profile-btn" class="back-btn">Edit Profile</button>
+                    <button id="save-profile-btn" class="view-profile-btn hidden">Save Changes</button>
+                </div>
+            `;
+            
+            // Edit/Save Profile Logic
+            const bioText = document.getElementById('bio-text');
+            const bioInput = document.getElementById('edit-bio-input');
+            const editBtn = document.getElementById('edit-profile-btn');
+            const saveBtn = document.getElementById('save-profile-btn');
+
+            editBtn.addEventListener('click', () => {
+                bioText.classList.add('hidden');
+                bioInput.classList.remove('hidden');
+                editBtn.classList.add('hidden');
+                saveBtn.classList.remove('hidden');
+            });
+
+            saveBtn.addEventListener('click', async () => {
+                const newBio = bioInput.value;
+                await db.collection('developers').doc(devId).update({ bio: newBio });
+                bioText.textContent = newBio;
+                bioText.classList.remove('hidden');
+                bioInput.classList.add('hidden');
+                editBtn.classList.remove('hidden');
+                saveBtn.classList.add('hidden');
+                alert('Profile Updated!');
+            });
+        }
+        
+        // --- Booking Modal Logic ---
+        const bookingModal = document.getElementById('booking-modal');
+        let currentBookingInfo = {};
+
+        document.body.addEventListener('click', e => {
+            if (e.target.id === 'book-now-btn') {
+                currentBookingInfo = { devId: e.target.dataset.id, devName: e.target.dataset.name };
+                document.getElementById('booking-modal-title').textContent = `Book Appointment with ${currentBookingInfo.devName}`;
+                document.getElementById('book-name').value = auth.currentUser.displayName || '';
+                bookingModal.classList.remove('hidden');
+            }
+        });
+        
+        document.getElementById('cancel-booking-btn').addEventListener('click', () => bookingModal.classList.add('hidden'));
+
+        document.getElementById('confirm-booking-btn').addEventListener('click', async () => {
+            const user = auth.currentUser;
+            const timeSlots = await db.collection('appointments').where('developerId', '==', currentBookingInfo.devId).get();
+            const bookedSlots = timeSlots.docs.map(doc => doc.data().timeSlot);
+            
+            // For this version, let's prompt for time. A real app would show a calendar.
+            const timeSlot = prompt(`Enter a time (e.g., 10:00 AM). Booked slots: ${bookedSlots.join(', ')}`);
+            if (!timeSlot || bookedSlots.includes(timeSlot)) {
+                alert('Invalid or already booked time slot!');
+                return;
+            }
+
+            const bookingData = {
+                developerId: currentBookingInfo.devId,
+                timeSlot: timeSlot,
+                studentName: document.getElementById('book-name').value,
+                studentPhone: document.getElementById('book-phone').value,
+                studentEmail: user.email,
+                purpose: document.getElementById('book-purpose').value
+            };
+
+            const res = await fetch('http://127.0.0.1:5000/book', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bookingData)
+            });
+            const result = await res.json();
+            alert(result.message);
+            if (result.success) {
+                bookingModal.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

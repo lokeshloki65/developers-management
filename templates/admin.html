@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Live Appointments</title>
+    
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #121212; color: #e0e0e0; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: 20px auto; padding: 20px; background-color: #1e1e1e; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); }
+        h1 { text-align: center; color: #bb86fc; border-bottom: 2px solid #bb86fc; padding-bottom: 10px; margin-bottom: 30px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 15px; border-bottom: 1px solid #333; text-align: left; }
+        thead { background-color: #333; }
+        th { color: #bb86fc; font-size: 1.1em; }
+        tbody tr:hover { background-color: #2a2a2a; }
+        .empty-state { text-align: center; padding: 40px; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Live Appointments Dashboard 📡</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Student Info</th>
+                    <th>Developer ID</th>
+                    <th>Time Slot</th>
+                    <th>Booked At</th>
+                </tr>
+            </thead>
+            <tbody id="appointments-table-body">
+                <tr>
+                    <td colspan="4" class="empty-state">Waiting for new appointments...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    
+    <script>
+        // --- IMPORTANT: உங்கள் Firebase ப்ராஜெக்ட் செட்டிங்ஸில் இருந்து இதை காப்பி செய்யவும் ---
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        const tableBody = document.getElementById('appointments-table-body');
+
+        db.collection('appointments').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+            if (snapshot.empty) {
+                tableBody.innerHTML = `<tr><td colspan="4" class="empty-state">No appointments booked yet.</td></tr>`;
+                return;
+            }
+            let rows = '';
+            snapshot.forEach(doc => {
+                const app = doc.data();
+                const bookedDate = app.timestamp ? app.timestamp.toDate().toLocaleString('en-IN') : 'N/A';
+                rows += `
+                    <tr>
+                        <td>${app.studentName}</td>
+                        <td>${app.developerId}</td>
+                        <td>${app.timeSlot}</td>
+                        <td>${bookedDate}</td>
+                    </tr>
+                `;
+            });
+            tableBody.innerHTML = rows;
+        }, error => {
+            console.error("Error fetching appointments: ", error);
+            tableBody.innerHTML = `<tr><td colspan="4" class="empty-state" style="color: red;">Error loading data.</td></tr>`;
+        });
+    </script>
+</body>
+</html>
